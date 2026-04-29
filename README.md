@@ -1,1 +1,1 @@
-# researchrabbit
+# ResearchRabbit
