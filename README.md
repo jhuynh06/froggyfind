@@ -15,6 +15,8 @@ PDF support is intentionally out of scope for this MVP because PDFs often open o
 
 From the repo root:
 
+**macOS/Linux:**
+
 ```bash
 cd backend
 python3 -m venv .venv
@@ -22,6 +24,26 @@ source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
+
+**Windows (PowerShell):**
+
+If you get an execution policy error, run this once first:
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+Then:
+
+```powershell
+cd backend
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+You'll know the venv is active when `(.venv)` appears at the start of your prompt.
 
 The first ranking request downloads the default embedding model:
 
