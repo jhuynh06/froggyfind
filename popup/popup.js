@@ -65,51 +65,7 @@ async function getActiveTab() {
 async function extractPageText(tabId) {
   const results = await chrome.scripting.executeScript({
     target: { tabId },
-    func: () => {
-      const textParts = new Set();
-
-      function addText(value) {
-        const text = (value || "").trim();
-        if (text) {
-          textParts.add(text);
-        }
-      }
-
-      function collectFromRoot(root) {
-        addText(root.body?.innerText);
-        addText(root.documentElement?.innerText);
-
-        for (const selector of ["article", "main", "[role='main']", ".abstract", "#abstract"]) {
-          for (const element of root.querySelectorAll?.(selector) || []) {
-            addText(element.innerText);
-          }
-        }
-
-        for (const element of root.querySelectorAll?.("p, h1, h2, h3, h4, li, blockquote") || []) {
-          addText(element.innerText);
-        }
-
-        for (const element of root.querySelectorAll?.("*") || []) {
-          if (element.shadowRoot) {
-            collectFromRoot(element.shadowRoot);
-          }
-        }
-      }
-
-      collectFromRoot(document);
-
-      for (const iframe of document.querySelectorAll("iframe")) {
-        try {
-          if (iframe.contentDocument) {
-            collectFromRoot(iframe.contentDocument);
-          }
-        } catch {
-          // Cross-origin iframes are intentionally inaccessible.
-        }
-      }
-
-      return Array.from(textParts).join("\n\n");
-    },
+    func: () => document.body?.innerText || "",
   });
 
   return (results[0]?.result || "").trim();
@@ -140,8 +96,51 @@ function renderChunks(chunks) {
     text.textContent = chunk.text;
 
     wrapper.append(header, explanation, text);
+
+    wrapper.addEventListener("click", async () => {
+      document.querySelectorAll(".chunk").forEach((c) => c.classList.remove("active"));
+      wrapper.classList.add("active");
+      try {
+        const tab = await getActiveTab();
+        const matches = await highlightChunk(tab.id, chunk.text);
+        setStatus(matches > 0
+          ? `Highlighted ${matches} match${matches === 1 ? "" : "es"} on page.`
+          : "No matches found on page for this chunk.");
+      } catch (error) {
+        setStatus(error.message);
+      }
+    });
+
     resultsElement.appendChild(wrapper);
   }
+}
+
+async function highlightChunk(tabId, text) {
+  const results = await chrome.scripting.executeScript({
+    target: { tabId },
+    func: (t) => {
+      if (typeof window.highlightText !== "function") {
+        return { error: "content_script_missing" };
+      }
+      const tries = [t];
+      const sentences = t.match(/[^.!?\n]+[.!?]?/g) || [];
+      if (sentences.length > 1) tries.push(sentences[0].trim());
+      const words = t.split(/\s+/);
+      if (words.length > 12) tries.push(words.slice(0, 12).join(" "));
+      for (const candidate of tries) {
+        const count = window.highlightText(candidate);
+        if (count > 0) return { count };
+      }
+      return { count: 0 };
+    },
+    args: [text],
+  });
+
+  const result = results[0]?.result || {};
+  if (result.error === "content_script_missing") {
+    throw new Error("Content script not loaded — reload the article page.");
+  }
+  return result.count || 0;
 }
 
 function setLoading(isLoading) {
