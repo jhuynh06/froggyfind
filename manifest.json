@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "ResearchRabbit",
+  "version": "1.0.0",
+  "description": "Persistent floating action button with Chat/Summarizer and Search tools.",
+  "permissions": ["activeTab", "scripting"],
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["scripts/content.js"],
+      "css": ["styles/floating-button.css"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*.png"],
+      "matches": ["http://*/*", "https://*/*"]
+    }
+  ]
+}
