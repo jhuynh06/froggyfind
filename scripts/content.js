@@ -274,6 +274,16 @@
   let isOpen = false;
   let isSearching = false;
 
+  // Q&A session state: page text is only sent to the backend on the first
+  // question per page URL. The backend caches it keyed by page_id (URL) so
+  // follow-ups reuse it. If the backend loses the cache (e.g., restart) it
+  // responds 409 and we re-send the page text once.
+  let qaSessionUrl = null;
+  let qaPageTextSent = false;
+  let qaHistory = [];
+  let qaIsSending = false;
+  const QA_MAX_HISTORY = 20;
+
   function openMenu() {
     isOpen = true;
     mainBtn.classList.add("rr-open");
@@ -340,7 +350,76 @@
     qaMessages.scrollTop = qaMessages.scrollHeight;
   }
 
-  function sendQaMessage() {
+  function appendQaLoading() {
+    const row = createQaMessage("ai", "Thinking...");
+    row.classList.add("rr-qa-message-loading");
+    qaMessages.appendChild(row);
+    qaMessages.scrollTop = qaMessages.scrollHeight;
+    return row;
+  }
+
+  function askBackendQA(payload) {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage({ type: "RR_QA", payload }, (response) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
+        if (!response?.ok) {
+          const err = new Error(response?.error || "Q&A request failed.");
+          err.status = response?.status || 0;
+          reject(err);
+          return;
+        }
+        resolve(response.body);
+      });
+    });
+  }
+
+  async function requestQaAnswer(question, { forcePageText = false } = {}) {
+    const currentUrl = window.location.href;
+    const newSession = currentUrl !== qaSessionUrl;
+    if (newSession) {
+      qaSessionUrl = currentUrl;
+      qaPageTextSent = false;
+      qaHistory = [];
+    }
+
+    const includePageText = forcePageText || !qaPageTextSent;
+    const payload = {
+      question,
+      page_id: currentUrl,
+      history: qaHistory,
+    };
+
+    if (includePageText) {
+      const pageText = getVisiblePageText();
+      if (pageText.length < MIN_PAGE_TEXT_CHARS) {
+        const err = new Error(
+          `Only ${pageText.length} characters of page text found. Open an HTML article or paper and try again.`,
+        );
+        err.status = 400;
+        throw err;
+      }
+      payload.page_text = pageText;
+    }
+
+    try {
+      const body = await askBackendQA(payload);
+      qaPageTextSent = true;
+      return body;
+    } catch (error) {
+      // Backend cache miss: retry once with the full page text.
+      if (error.status === 409 && !includePageText) {
+        qaPageTextSent = false;
+        return requestQaAnswer(question, { forcePageText: true });
+      }
+      throw error;
+    }
+  }
+
+  async function sendQaMessage() {
+    if (qaIsSending) return;
     const message = qaInput.value.trim();
     if (!message) {
       qaInput.focus();
@@ -349,7 +428,32 @@
 
     appendQaMessage("user", message);
     qaInput.value = "";
-    qaInput.focus();
+    qaIsSending = true;
+    qaSend.disabled = true;
+    qaInput.disabled = true;
+
+    const loadingRow = appendQaLoading();
+
+    try {
+      const body = await requestQaAnswer(message);
+      loadingRow.remove();
+      const answer = (body?.answer || "").trim() || "(empty response)";
+      appendQaMessage("ai", answer);
+
+      qaHistory.push({ role: "user", content: message });
+      qaHistory.push({ role: "assistant", content: answer });
+      if (qaHistory.length > QA_MAX_HISTORY) {
+        qaHistory = qaHistory.slice(-QA_MAX_HISTORY);
+      }
+    } catch (error) {
+      loadingRow.remove();
+      appendQaMessage("ai", `Error: ${error.message || "Q&A request failed."}`);
+    } finally {
+      qaIsSending = false;
+      qaSend.disabled = false;
+      qaInput.disabled = false;
+      qaInput.focus();
+    }
   }
 
   appendQaMessage(

@@ -418,6 +418,11 @@
   box-shadow: 0 2px 5px rgba(213, 223, 250, 0.55);
 }
 
+.rr-qa-message-loading .rr-qa-bubble {
+  color: rgba(98, 120, 176, 0.8);
+  font-style: italic;
+}
+
 .rr-qa-message-user .rr-qa-bubble {
   min-width: 0;
   max-width: calc(100% - 28px);
