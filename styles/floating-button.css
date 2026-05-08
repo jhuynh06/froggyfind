@@ -431,6 +431,37 @@
   border-radius: 12px 4px 12px 12px;
 }
 
+.rr-qa-citations {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid #e2e8f4;
+}
+
+.rr-qa-citation-link {
+  all: unset;
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 14px;
+  color: #3a509d;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: #f0f4ff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  display: block;
+  transition: background 0.15s ease;
+}
+
+.rr-qa-citation-link:hover {
+  background: #dfe6fb;
+  text-decoration: underline;
+}
+
 .rr-qa-input-panel {
   box-sizing: border-box;
   display: flex;

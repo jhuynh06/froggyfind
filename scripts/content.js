@@ -322,7 +322,7 @@
     qaPanel.classList.remove("rr-visible");
   }
 
-  function createQaMessage(role, text) {
+  function createQaMessage(role, text, sources) {
     const row = document.createElement("div");
     row.className = `rr-qa-message rr-qa-message-${role}`;
 
@@ -341,12 +341,28 @@
     const bubble = document.createElement("div");
     bubble.className = "rr-qa-bubble";
     bubble.textContent = text;
+
+    if (role === "ai" && sources && sources.length > 0) {
+      const citationsDiv = document.createElement("div");
+      citationsDiv.className = "rr-qa-citations";
+      sources.forEach((source, i) => {
+        const link = document.createElement("button");
+        link.type = "button";
+        link.className = "rr-qa-citation-link";
+        link.textContent = `[${i + 1}] ${truncateText(source.text, 60)}`;
+        link.title = "Jump to passage on page";
+        link.addEventListener("click", () => highlightChunk(source.text));
+        citationsDiv.appendChild(link);
+      });
+      bubble.appendChild(citationsDiv);
+    }
+
     row.appendChild(bubble);
     return row;
   }
 
-  function appendQaMessage(role, text) {
-    qaMessages.appendChild(createQaMessage(role, text));
+  function appendQaMessage(role, text, sources) {
+    qaMessages.appendChild(createQaMessage(role, text, sources));
     qaMessages.scrollTop = qaMessages.scrollHeight;
   }
 
@@ -438,7 +454,8 @@
       const body = await requestQaAnswer(message);
       loadingRow.remove();
       const answer = (body?.answer || "").trim() || "(empty response)";
-      appendQaMessage("ai", answer);
+      const sources = body?.sources || [];
+      appendQaMessage("ai", answer, sources);
 
       qaHistory.push({ role: "user", content: message });
       qaHistory.push({ role: "assistant", content: answer });
