@@ -565,7 +565,7 @@
           node.classList.remove("rr-active");
         });
         item.classList.add("rr-active");
-        highlightChunk(chunk.text || "");
+        highlightChunk(chunk.text || "", { prefix: chunk.prefix, suffix: chunk.suffix });
       });
       searchResults.appendChild(item);
     }
@@ -646,7 +646,7 @@
         return;
       }
 
-      highlightChunk(chunks[0].text || "");
+      highlightChunk(chunks[0].text || "", { prefix: chunks[0].prefix, suffix: chunks[0].suffix });
       setStatus(`${chunks.length} relevant passage${chunks.length === 1 ? "" : "s"}`);
       searchResults.querySelector(".rr-search-result-item")?.classList.add("rr-active");
     } catch (error) {
@@ -863,19 +863,35 @@
       const map = [];
       let prevWasSpace = true;
 
-      for (const node of nodes) {
+      for (let nodeIdx = 0; nodeIdx < nodes.length; nodeIdx++) {
+        const node = nodes[nodeIdx];
+        // Mirror getVisiblePageText's parts.join(" "): insert a virtual space
+        // between adjacent text nodes so anchors that cross inline-element
+        // boundaries (e.g. "word<em>x</em>more") still match.
+        if (nodeIdx > 0 && !prevWasSpace) {
+          haystack += " ";
+          map.push({ node, offset: 0 });
+          prevWasSpace = true;
+        }
         const text = node.nodeValue;
         for (let index = 0; index < text.length; index++) {
-          const char = text[index];
-          if (/\s/.test(char)) {
-            if (prevWasSpace) continue;
-            haystack += " ";
-            map.push({ node, offset: index });
-            prevWasSpace = true;
-          } else {
-            haystack += char.toLowerCase();
-            map.push({ node, offset: index });
-            prevWasSpace = false;
+          const rawChar = text[index];
+          // NFKC-normalize each char so ligatures (ﬁ→fi), nbsp, and other
+          // compatibility codepoints line up with the backend chunk text,
+          // which is preprocessed via unicodedata.normalize("NFKC", ...).
+          const normalized = rawChar.normalize("NFKC").toLowerCase();
+          for (let j = 0; j < normalized.length; j++) {
+            const char = normalized[j];
+            if (/\s/.test(char)) {
+              if (prevWasSpace) continue;
+              haystack += " ";
+              map.push({ node, offset: index });
+              prevWasSpace = true;
+            } else {
+              haystack += char;
+              map.push({ node, offset: index });
+              prevWasSpace = false;
+            }
           }
         }
       }
@@ -937,7 +953,11 @@
     function highlightText(query, options = {}) {
       if (!query || !document.body) return 0;
       const { scrollToFirst = true } = options;
-      const needle = String(query).replace(/\s+/g, " ").trim().toLowerCase();
+      const needle = String(query)
+        .normalize("NFKC")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
       if (!needle) return 0;
 
       ensureHighlightStyle();
@@ -984,8 +1004,16 @@
 
     function highlightRange(prefix, suffix) {
       if (!prefix || !document.body) return 0;
-      const start = String(prefix).replace(/\s+/g, " ").trim().toLowerCase();
-      const end = String(suffix || prefix).replace(/\s+/g, " ").trim().toLowerCase();
+      const start = String(prefix)
+        .normalize("NFKC")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+      const end = String(suffix || prefix)
+        .normalize("NFKC")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
       if (!start) return 0;
 
       ensureHighlightStyle();
