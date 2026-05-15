@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "ResearchRabbit",
+  "name": "FroggyFind",
   "version": "1.0.0",
   "description": "Persistent floating action button with Chat/Summarizer and semantic Search tools.",
   "permissions": ["activeTab", "scripting"],

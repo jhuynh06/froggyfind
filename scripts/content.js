@@ -1,5 +1,5 @@
 /**
- * ResearchRabbit Floating Action Button
+ * FroggyFind Floating Action Button
  * Injects persistent page controls and semantic search highlighting.
  */
 
@@ -62,7 +62,7 @@
       .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
   }
 
-  if (!window.ResearchRabbitHighlighter) {
+  if (!window.FroggyFindHighlighter) {
     installHighlighter();
   }
 
@@ -201,8 +201,8 @@
   const mainBtn = document.createElement("button");
   mainBtn.id = "rr-fab-main";
   mainBtn.className = "rr-fab-btn";
-  mainBtn.setAttribute("data-tooltip", "ResearchRabbit");
-  mainBtn.setAttribute("aria-label", "Toggle ResearchRabbit menu");
+  mainBtn.setAttribute("data-tooltip", "FroggyFind");
+  mainBtn.setAttribute("aria-label", "Toggle FroggyFind menu");
   mainBtn.setAttribute("aria-expanded", "false");
   mainBtn.innerHTML = `
     <svg id="rr-fab-main-svg" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 26 26" fill="#3a509d">
@@ -1063,14 +1063,14 @@
       return 0;
     }
 
-    function getResearchRabbitVisibleText() {
+    function getFroggyFindVisibleText() {
       return document.body?.innerText || "";
     }
 
     window.highlightText = highlightText;
     window.highlightRange = highlightRange;
     window.clearHighlights = clearHighlights;
-    window.getResearchRabbitVisibleText = getResearchRabbitVisibleText;
-    window.ResearchRabbitHighlighter = true;
+    window.getFroggyFindVisibleText = getFroggyFindVisibleText;
+    window.FroggyFindHighlighter = true;
   }
 })();

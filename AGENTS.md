@@ -1,8 +1,8 @@
-# ResearchRabbit AI Agent Guidance
+# FroggyFind AI Agent Guidance
 
 ## Project overview
 
-ResearchRabbit is a small Chrome/Edge extension built with Manifest V3.
+FroggyFind is a small Chrome/Edge extension built with Manifest V3.
 It injects a floating action button into web pages via `scripts/content.js`, uses `styles/floating-button.css` for page styling, and exposes a minimal `popup/popup.html` UI.
 
 The backend is hosted externally on DigitalOcean App Platform (separate repo: `researchrabbit-backend`). The extension communicates with it via `scripts/background.js`.

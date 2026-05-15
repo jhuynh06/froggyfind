@@ -1,7 +1,7 @@
 /**
  * Generates icons/icon16.png, icon48.png, icon128.png
  * Pure Node.js — no external dependencies.
- * Draws the ResearchRabbit logo: dark-blue circle + grid-of-dots + sparkle.
+ * Draws the FroggyFind logo: dark-blue circle + grid-of-dots + sparkle.
  */
 
 const fs = require("fs");

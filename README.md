@@ -18,7 +18,7 @@ PDF support is intentionally out of scope — PDFs often open outside Chrome or 
 3. Click **Load unpacked**
 4. Select this repo folder
 5. Open an HTML research webpage
-6. Click the ResearchRabbit extension icon or use the floating action button
+6. Click the FroggyFind extension icon or use the floating action button
 7. Enter a prompt and click **Find Relevant Chunks**
 
 No local server required — the extension connects to the hosted backend automatically.
